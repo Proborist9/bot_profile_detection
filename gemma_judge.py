@@ -30,9 +30,8 @@ Reply with JSON only. No extra words. No code fences. Use exactly this shape:
 
 
 def clean_json_text(text):
-    text = text.strip()
-    lines = [line for line in text.splitlines() if not line.strip().startswith('```')]
-    return '\n'.join(lines).strip()
+    start, end = text.find('{'), text.rfind('}')
+    return text[start:end + 1] if start != -1 and end != -1 else text.strip()
 
 
 def judge_profile(profile_text):
