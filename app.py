@@ -2,17 +2,81 @@ import streamlit as st
 from rules import score_rules, profile_to_text
 from gemma_judge import judge_profile
 
+DEMOS = {
+    "Bot example": {
+        "username": "deal_hunter_83219",
+        "bio": "DM for promo, free gift, link in bio",
+        "followers": 40,
+        "following": 900,
+        "account_age_days": 12,
+        "posts": 300,
+        "posts_per_day": 25.0,
+        "has_avatar": 0,
+    },
+    "Human example": {
+        "username": "maya_cooks",
+        "bio": "Home cook from Pune. Sourdough fan.",
+        "followers": 640,
+        "following": 410,
+        "account_age_days": 1500,
+        "posts": 320,
+        "posts_per_day": 0.2,
+        "has_avatar": 1,
+    },
+    "Tricky example": {
+        "username": "rohit_1998",
+        "bio": "Cricket, coffee and weekend treks.",
+        "followers": 120,
+        "following": 200,
+        "account_age_days": 60,
+        "posts": 40,
+        "posts_per_day": 0.7,
+        "has_avatar": 0,
+    },
+}
+DEFAULTS = {
+    "username": "",
+    "bio": "",
+    "followers": 0,
+    "following": 0,
+    "account_age_days": 0,
+    "posts": 0,
+    "posts_per_day": 0.0,
+    "has_profile_picture": True,
+}
+for key, value in DEFAULTS.items():
+    st.session_state.setdefault(key, value)
+def load_demo():
+    choice = st.session_state["demo_choice"]
+    if choice in DEMOS:
+        d = DEMOS[choice]
+        st.session_state["username"] = d["username"]
+        st.session_state["bio"] = d["bio"]
+        st.session_state["followers"] = d["followers"]
+        st.session_state["following"] = d["following"]
+        st.session_state["account_age_days"] = d["account_age_days"]
+        st.session_state["posts"] = d["posts"]
+        st.session_state["posts_per_day"] = d["posts_per_day"]
+        st.session_state["has_profile_picture"] = bool(d["has_avatar"])
+
 st.title("Bot Profile Detector")
 st.caption("Sample detection only. This is a suspicion score, not a verdict on any real account.")
 
-username = st.text_input("Username")
-bio = st.text_area("Bio")
-followers = st.number_input("Followers", min_value=0, step=1)
-following = st.number_input("Following", min_value=0, step=1)
-account_age_days = st.number_input("Account age (days)", min_value=0, step=1)
-posts = st.number_input("Posts", min_value=0, step=1)
-posts_per_day = st.number_input("Posts per day", min_value=0.0, step=0.1)
-has_profile_picture = st.checkbox("Has profile picture", value=True)
+st.selectbox(
+    "Load a demo profile",
+    ["(choose one)"] + list(DEMOS.keys()),
+    key="demo_choice",
+    on_change=load_demo,
+)
+
+username = st.text_input("Username", key="username")
+bio = st.text_area("Bio", key="bio")
+followers = st.number_input("Followers", min_value=0, step=1, key="followers")
+following = st.number_input("Following", min_value=0, step=1, key="following")
+account_age_days = st.number_input("Account age (days)", min_value=0, step=1, key="account_age_days")
+posts = st.number_input("Posts", min_value=0, step=1, key="posts")
+posts_per_day = st.number_input("Posts per day", min_value=0.0, step=0.1, key="posts_per_day")
+has_profile_picture = st.checkbox("Has profile picture", key="has_profile_picture")
 
 if st.button("Analyze"):
     profile = {
