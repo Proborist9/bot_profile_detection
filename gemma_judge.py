@@ -4,8 +4,6 @@ from google import genai
 
 MODEL = 'gemma-4-26b-a4b-it'
 
-client = genai.Client(api_key=os.environ['GEMINI_API_KEY'])
-
 PROMPT_TEMPLATE = """You are helping spot likely bot accounts on a social media platform.
 Look at the profile below and decide if it is more likely a bot or a human.
 A missing profile picture alone does not prove a bot.
@@ -20,14 +18,14 @@ Reply with JSON only. No extra words. No code fences. Use exactly this shape:
 
 
 def clean_json_text(text):
-    text = text.strip()
-    lines = [line for line in text.splitlines() if not line.strip().startswith('```')]
-    return '\n'.join(lines).strip()
+    start, end = text.find('{'), text.rfind('}')
+    return text[start:end + 1] if start != -1 and end != -1 else text.strip()
 
 
 def judge_profile(profile_text):
     prompt = PROMPT_TEMPLATE.format(profile_text=profile_text)
     try:
+        client = genai.Client(api_key=os.environ['GEMINI_API_KEY'])
         response = client.models.generate_content(model=MODEL, contents=prompt)
         data = json.loads(clean_json_text(response.text))
 

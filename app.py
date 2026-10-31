@@ -1,4 +1,6 @@
 import streamlit as st
+from rules import score_rules, profile_to_text
+from gemma_judge import judge_profile
 
 st.title("Bot Profile Detector")
 st.caption("Sample detection only. This is a suspicion score, not a verdict on any real account.")
@@ -13,4 +15,33 @@ posts_per_day = st.number_input("Posts per day", min_value=0.0, step=0.1)
 has_profile_picture = st.checkbox("Has profile picture", value=True)
 
 if st.button("Analyze"):
-    st.metric("Final score", 50)
+    profile = {
+        "username": username,
+        "bio": bio,
+        "followers": followers,
+        "following": following,
+        "account_age_days": account_age_days,
+        "posts": posts,
+        "posts_per_day": posts_per_day,
+        "has_avatar": int(has_profile_picture),
+    }
+
+    rules_score = score_rules(profile)
+    gemma = judge_profile(profile_to_text(profile))
+
+    st.write(gemma)  # temporary: shows exactly what Gemma returned
+
+    if gemma["verdict"] == "unknown":
+        st.warning("Gemma could not give an answer. Showing the rules score only.")
+        final_score = rules_score
+    else:
+        if gemma["verdict"] == "bot":
+            gemma_bot_score = gemma["confidence"]
+        else:
+            gemma_bot_score = 100 - gemma["confidence"]
+        final_score = (rules_score + gemma_bot_score) / 2
+
+    st.metric("Final score", f"{final_score:.0f}")
+    st.write("Gemma's verdict:", gemma["verdict"])
+    for reason in gemma["reasons"]:
+        st.write("- " + reason)
