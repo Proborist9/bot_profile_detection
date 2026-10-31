@@ -4,7 +4,14 @@ from google import genai
 
 MODEL = 'gemma-4-26b-a4b-it'
 
-client = genai.Client(api_key=os.environ['GEMINI_API_KEY'])
+def _get_client():
+    api_key = os.environ.get('GEMINI_API_KEY')
+    if not api_key:
+        raise EnvironmentError(
+            "GEMINI_API_KEY environment variable is not set. "
+            "Run: export GEMINI_API_KEY='your_key_here'"
+        )
+    return genai.Client(api_key=api_key)
 
 PROMPT_TEMPLATE = """You are helping spot likely bot accounts on a social media platform.
 Look at the profile below and decide if it is more likely a bot or a human.
@@ -28,6 +35,7 @@ def clean_json_text(text):
 def judge_profile(profile_text):
     prompt = PROMPT_TEMPLATE.format(profile_text=profile_text)
     try:
+        client = _get_client()
         response = client.models.generate_content(model=MODEL, contents=prompt)
         data = json.loads(clean_json_text(response.text))
 
