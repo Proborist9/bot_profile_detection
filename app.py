@@ -118,4 +118,6 @@ if st.button("Analyze"):
     st.write("Gemma's verdict:", gemma["verdict"])
     for reason in gemma["reasons"]:
         st.write("- " + reason)
+    with st.expander("Raw Gemma JSON"):
+        st.json(gemma)
     st.caption("Sample detection only. This is a suspicion score, not a verdict on any real account.")        
