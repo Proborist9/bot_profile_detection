@@ -53,6 +53,45 @@ def check_profile(row):
     """Return the list of rule names that triggered for this profile."""
     return [name for name, rule in RULES.items() if rule(row)]
 
+def bio_empty_or_spam(row):
+    bio = row["bio"]
+    if pd.isna(bio) or str(bio).strip() == "":
+        return True
+    return spam_bio(row)
+
+
+def score_rules(row):
+    """Return a suspicion score from 0 to 100 for one profile."""
+    score = 0
+    if many_digits_in_username(row):
+        score += 20
+    if no_avatar(row):
+        score += 15
+    if new_account(row):
+        score += 15
+    if posts_too_much(row):
+        score += 20
+    if row["following"] > 3 * row["followers"]:
+        score += 15
+    if bio_empty_or_spam(row):
+        score += 15
+    return min(score, 100)
+
+
+def profile_to_text(row):
+    """Turn one profile into a readable block of text for the Gemma prompt."""
+    bio = row["bio"]
+    if pd.isna(bio) or str(bio).strip() == "":
+        bio = "(empty)"
+    avatar = "yes" if row["has_avatar"] == 1 else "no"
+    return (
+        f"Username: {row['username']}\n"
+        f"Bio: {bio}\n"
+        f"Followers: {row['followers']}, Following: {row['following']}\n"
+        f"Account age: {row['account_age_days']} days, Posts: {row['posts']}\n"
+        f"Has profile picture: {avatar}"
+    )
+
 
 if __name__ == "__main__":
     df = pd.read_csv("data/profiles.csv")
