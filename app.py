@@ -1,39 +1,49 @@
+import os
 import streamlit as st
 from rules import score_rules, profile_to_text
 from gemma_judge import judge_profile
 
-DEMOS = {
-    "Bot example": {
-        "username": "deal_hunter_83219",
-        "bio": "DM for promo, free gift, link in bio",
-        "followers": 40,
-        "following": 900,
-        "account_age_days": 12,
-        "posts": 300,
-        "posts_per_day": 25.0,
-        "has_avatar": 0,
-    },
-    "Human example": {
-        "username": "maya_cooks",
-        "bio": "Home cook from Pune. Sourdough fan.",
-        "followers": 640,
-        "following": 410,
-        "account_age_days": 1500,
-        "posts": 320,
-        "posts_per_day": 0.2,
-        "has_avatar": 1,
-    },
-    "Tricky example": {
-        "username": "rohit_1998",
-        "bio": "Cricket, coffee and weekend treks.",
-        "followers": 120,
-        "following": 200,
-        "account_age_days": 60,
-        "posts": 40,
-        "posts_per_day": 0.7,
-        "has_avatar": 0,
-    },
-}
+def to_number(text, default=0.0):
+    try:
+        return float(text)
+    except (TypeError, ValueError):
+        return default
+
+
+def load_demos():
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "demo_profiles.txt")
+    demos = {}
+    try:
+        text = open(path, encoding="utf-8").read().strip()
+    except FileNotFoundError:
+        return demos
+
+    for block in text.split("---"):
+        fields = {}
+        for line in block.strip().splitlines():
+            if ":" in line:
+                key, value = line.split(":", 1)
+                fields[key.strip().lower()] = value.strip()
+        if not fields:
+            continue
+
+        picture = fields.get("has profile picture", "").lower()
+        name = fields.get("username", "Profile")
+        demos[name] = {
+            "username": fields.get("username", ""),
+            "bio": fields.get("bio", ""),
+            "followers": int(to_number(fields.get("followers"))),
+            "following": int(to_number(fields.get("following"))),
+            "account_age_days": int(to_number(fields.get("account age"))),
+            "posts": int(to_number(fields.get("posts"))),
+            "posts_per_day": to_number(fields.get("posts per day")),
+            "has_avatar": 1 if picture in ("yes", "y", "true", "1") else 0,
+        }
+    return demos
+
+
+DEMOS = load_demos()
+
 DEFAULTS = {
     "username": "",
     "bio": "",
