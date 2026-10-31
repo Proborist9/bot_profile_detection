@@ -66,7 +66,7 @@ def score_rules(row):
     if many_digits_in_username(row):
         score += 20
     if no_avatar(row):
-        score += 15
+        score += 10
     if new_account(row):
         score += 15
     if posts_too_much(row):
