@@ -1,6 +1,9 @@
 import os
 import json
+from dotenv import load_dotenv
 from google import genai
+
+load_dotenv()  # automatically loads GEMINI_API_KEY from .env file
 
 MODEL = 'gemma-4-26b-a4b-it'
 
