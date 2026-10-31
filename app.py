@@ -29,10 +29,11 @@ if st.button("Analyze"):
     rules_score = score_rules(profile)
     gemma = judge_profile(profile_to_text(profile))
 
-    st.write(gemma)  # temporary: shows exactly what Gemma returned
+    # temporary: shows exactly what Gemma returned
 
     if gemma["verdict"] == "unknown":
         st.warning("Gemma could not give an answer. Showing the rules score only.")
+        gemma_bot_score = None
         final_score = rules_score
     else:
         if gemma["verdict"] == "bot":
@@ -40,8 +41,17 @@ if st.button("Analyze"):
         else:
             gemma_bot_score = 100 - gemma["confidence"]
         final_score = (rules_score + gemma_bot_score) / 2
-
-    st.metric("Final score", f"{final_score:.0f}")
+    if final_score >= 65:
+        st.error(f"Likely a bot (suspicion {final_score:.0f}/100)")
+    elif final_score <= 35:
+        st.success(f"Likely a human (suspicion {final_score:.0f}/100)")
+    else:
+        st.warning(f"Unclear, in the middle (suspicion {final_score:.0f}/100)")
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Rules score", f"{rules_score:.0f}")
+    col2.metric("Gemma bot score", "n/a" if gemma_bot_score is None else f"{gemma_bot_score:.0f}")
+    col3.metric("Final score", f"{final_score:.0f}")
     st.write("Gemma's verdict:", gemma["verdict"])
     for reason in gemma["reasons"]:
         st.write("- " + reason)
+    st.caption("Sample detection only. This is a suspicion score, not a verdict on any real account.")        
