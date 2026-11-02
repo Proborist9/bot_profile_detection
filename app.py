@@ -1,9 +1,10 @@
 import streamlit as st
 from rules import score_rules, profile_to_text
 from gemma_judge import judge_profile
+from style import apply_theme, hero, score_card, reasons_card, disclaimer
 
-st.title("Bot Profile Detector")
-st.caption("Sample detection only. This is a suspicion score, not a verdict on any real account.")
+apply_theme()  # must come first, before any other st. call
+hero()
 
 username = st.text_input("Username")
 bio = st.text_area("Bio")
@@ -29,11 +30,9 @@ if st.button("Analyze"):
     rules_score = score_rules(profile)
     gemma = judge_profile(profile_to_text(profile))
 
-    # temporary: shows exactly what Gemma returned
-
     if gemma["verdict"] == "unknown":
         st.warning("Gemma could not give an answer. Showing the rules score only.")
-        gemma_bot_score = None
+        gemma_bot_score = 0
         final_score = rules_score
     else:
         if gemma["verdict"] == "bot":
@@ -41,17 +40,8 @@ if st.button("Analyze"):
         else:
             gemma_bot_score = 100 - gemma["confidence"]
         final_score = (rules_score + gemma_bot_score) / 2
-    if final_score >= 65:
-        st.error(f"Likely a bot (suspicion {final_score:.0f}/100)")
-    elif final_score <= 35:
-        st.success(f"Likely a human (suspicion {final_score:.0f}/100)")
-    else:
-        st.warning(f"Unclear, in the middle (suspicion {final_score:.0f}/100)")
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Rules score", f"{rules_score:.0f}")
-    col2.metric("Gemma bot score", "n/a" if gemma_bot_score is None else f"{gemma_bot_score:.0f}")
-    col3.metric("Final score", f"{final_score:.0f}")
-    st.write("Gemma's verdict:", gemma["verdict"])
-    for reason in gemma["reasons"]:
-        st.write("- " + reason)
-    st.caption("Sample detection only. This is a suspicion score, not a verdict on any real account.")        
+
+    # Results section using style helpers
+    score_card(final_score, rules_score, gemma_bot_score)
+    reasons_card(gemma.get("reasons", []))
+    disclaimer()

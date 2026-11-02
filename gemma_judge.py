@@ -1,20 +1,49 @@
-import os
 import json
+import os
+from functools import lru_cache
+from pathlib import Path
+
 from dotenv import load_dotenv
 from google import genai
 
-load_dotenv()  # automatically loads GEMINI_API_KEY from .env file
+# The .env file sits next to this file, so the key is found no matter which
+# folder you run the app or tests from.
+ENV_PATH = Path(__file__).resolve().with_name('.env')
+
+# override=True is important: an empty or placeholder GEMINI_API_KEY exported in
+# the shell must never shadow the real key saved in .env. The .env file is the
+# single source of truth, so the key only has to be set once.
+load_dotenv(dotenv_path=ENV_PATH, override=True)
 
 MODEL = 'gemma-4-26b-a4b-it'
+MIN_KEY_LENGTH = 20
 
-def _get_client():
-    api_key = os.environ.get('GEMINI_API_KEY')
-    if not api_key:
+
+def _get_api_key():
+    api_key = (os.environ.get('GEMINI_API_KEY') or '').strip().strip('"').strip("'")
+    if len(api_key) < MIN_KEY_LENGTH or 'api_key' in api_key.lower():
         raise EnvironmentError(
-            "GEMINI_API_KEY environment variable is not set. "
-            "Run: export GEMINI_API_KEY='your_key_here'"
+            'GEMINI_API_KEY is missing or looks like a placeholder. '
+            f'Put your real key in {ENV_PATH} on a line like:\n'
+            'GEMINI_API_KEY=your-key-here\n'
+            'Get a key from https://aistudio.google.com/apikey'
         )
-    return genai.Client(api_key=api_key)
+    return api_key
+
+
+def validate_setup():
+    """Raise a clear error if the API key is missing.
+
+    Call this before a long run so the job fails in a second instead of
+    silently returning errors for every profile.
+    """
+    return _get_api_key()
+
+
+@lru_cache(maxsize=1)
+def _get_client():
+    return genai.Client(api_key=_get_api_key())
+
 
 PROMPT_TEMPLATE = """You are helping spot likely bot accounts on a social media platform.
 Look at the profile below and decide if it is more likely a bot or a human.
